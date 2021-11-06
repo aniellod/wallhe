@@ -16,7 +16,6 @@ import CoreGraphics
 func setBackground(theURL: String) {
     let workspace = NSWorkspace()
     let fixedURL = URL(string: theURL)
-    //let imageScaling: NSWorkspace.DesktopImageOptionKey
     var options = [NSWorkspace.DesktopImageOptionKey: Any]()
     options[.imageScaling] = NSImageScaling.scaleProportionallyUpOrDown.rawValue
     options[.allowClipping] = false
@@ -138,9 +137,8 @@ func updateWallpaper(path: String) {
     }
     setBackground(theURL: (destinationURL.absoluteString))
 }
-
+var debug:Bool = false
 let filemgr = FileManager.default
-//let dirName = "/Volumes/homes/dimeglio/cosplay/arknkrknsd/"
 var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
 
 let argument = CommandLine.arguments
@@ -167,11 +165,21 @@ let directoryURL = URL(string: dirName)!
 
 do {
     let filelist = try filemgr.contentsOfDirectory(atPath: dirName)
+    if debug { print("filelist count = \(filelist.count)") }
+    guard filelist.count > 0 else {
+        print()
+        print("No images found in directory \(directoryURL)")
+        exit(1)
+    }
     let pickedFile =  dirName + filelist.randomElement()!
     let theNextUrl = "file://" + pickedFile
     
     if (pickedFile.lowercased().contains(".jpg") || pickedFile.contains(".jpeg") || pickedFile.contains(".png")) {
         updateWallpaper(path: theNextUrl)
+    } else {
+        print()
+        print("No valid images found in directory \(directoryURL)")
+        exit(1)
     }
 } catch let error {
     print("Error: \(error.localizedDescription)")
