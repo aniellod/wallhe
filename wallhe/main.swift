@@ -2,7 +2,11 @@
 //  main.swift
 //  wallhe
 //
-//  Created by Aniello Di Meglio (Admin) on 2021-11-03.
+//  Swift 5
+//
+//  Created by Aniello Di Meglio on 2021-11-03.
+//
+//  Parts were converted to Swift 5.5 by Swiftify v5.5.22755 - https://swiftify.com/
 //
 
 import Foundation
@@ -16,20 +20,56 @@ func setBackground(theURL: String) {
     var options = [NSWorkspace.DesktopImageOptionKey: Any]()
     options[.imageScaling] = NSImageScaling.scaleProportionallyUpOrDown.rawValue
     options[.allowClipping] = false
-    do {
-//        try workspace.setDesktopImageURL(fixedURL!, for: NSScreen.screens[1])
-        try workspace.setDesktopImageURL(fixedURL!, for: NSScreen.screens[1], options: options)
-    } catch {print("duh")}
+    let theScreens = NSScreen.screens
+    for x in theScreens {
+        do {
+        try workspace.setDesktopImageURL(fixedURL!, for: x, options: options)
+        } catch {print("Unable to update wallpaper!")}
+    }
 }
 
-func buildWallpaper(sample: NSImage, sample2: NSImage, desktopSize: NSSize) -> NSImage {
-    //  Converted to Swift 5.5 by Swiftify v5.5.22755 - https://swiftify.com/
-    let resultImage = NSImage(size: (NSMakeSize(1920,1080)))
+func fileName() -> String {
+    var fileName = "wallhe-wallpaper1.png"
+    let path = NSSearchPathForDirectoriesInDomains(.picturesDirectory, .userDomainMask, true)[0] as String
+    let url = NSURL(fileURLWithPath: path)
+    if let pathComponent = url.appendingPathComponent(fileName) {
+        let filePath = pathComponent.path
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: filePath) {
+            fileName = "wallhe-wallpaper2.png"
+            let deleted = FileManager()
+            do {
+                let fileToDeleteURL = url.appendingPathComponent("wallhe-wallpaper1.png")
+                try deleted.removeItem(at: fileToDeleteURL!)
+               } catch { print(error) }
+        } else {
+            fileName = "wallhe-wallpaper1.png"
+            do {
+                let deleted = FileManager()
+                let fileToDeleteURL = url.appendingPathComponent("wallhe-wallpaper2.png")
+                try deleted.removeItem(at: fileToDeleteURL!)
+               } catch { print(error) }
+        }
+    }
+    return fileName
+}
+
+func buildWallpaper(sample: NSImage) -> NSImage {
+    let screenSize = NSScreen.screenSize
+    let sw = screenSize!.width
+    let sh = screenSize!.height
+    let tiles = Int(sw / sample.size.width)
+    let resultImage = NSImage(size: (NSMakeSize(sw,sh)))
+    
     resultImage.lockFocus()
-    sample.draw(at: NSPoint(x: 0, y: 0), from: NSRect.zero, operation: NSCompositingOperation.sourceOver, fraction: 1.0)
-    sample.draw(at: NSPoint(x: sample.size.width, y: 0), from: NSRect.zero, operation: NSCompositingOperation.sourceOver, fraction: 1.0)
-    sample.draw(at: NSPoint(x: sample.size.width * 2, y: 0), from: NSRect(x: 0, y:0, width: (1920 - sample.size.width * 2), height: 1080), operation: NSCompositingOperation.sourceOver, fraction: 1.0)
+    do {
+        for x in 0...tiles {
+            sample.draw(at: NSPoint(x: Int(sample.size.width) * x, y: 0), from: NSRect.zero, operation: NSCompositingOperation.sourceOver, fraction: 1.0)
+        }
+        sample.draw(at: NSPoint(x: Int(sample.size.width) * tiles, y: 0), from: NSRect(x: 0, y:0, width: (sw - sample.size.width * 2), height: sh), operation: NSCompositingOperation.sourceOver, fraction: 1.0)
+    }
     resultImage.unlockFocus()
+    
     return resultImage
 }
 
@@ -79,43 +119,60 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
 }
 
 func updateWallpaper(path: String) {
-    let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-    let destinationURL: URL = desktopURL.appendingPathComponent("my-image1.png")
-    let deleted = FileManager()
-    do {
-           try deleted.removeItem(at: destinationURL)
-       } catch { print(error) }
+    let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
+    let destinationURL: URL = desktopURL.appendingPathComponent(fileName())
     
     let theURL = URL(string: path)
 
     let origImage = NSImage(contentsOf: theURL!)
     let height = origImage!.size.height
-    let ratio = 1080.0 / height
+    let ratio = NSScreen.screenHeight! / height
     let newWidth = (origImage!.size.width) * ratio
 
     let newImage = resizedImage(at: theURL!, for: CGSize(width: newWidth, height: 1080))
-    //let imageSize = newImage?.size.height
-    let finalImage = buildWallpaper(sample: newImage!, sample2: newImage!, desktopSize: NSSize(width: 1920, height: 1080))
+    let finalImage = buildWallpaper(sample: newImage!)
     
-    if finalImage.pngWrite(to: destinationURL) {
-        print("File saved")
+    guard finalImage.pngWrite(to: destinationURL) else {
+        print("File count not be saved")
+        return
     }
     setBackground(theURL: (destinationURL.absoluteString))
 }
 
-let dirName = "/Users/dimeglio/Downloads/kc_nemutai-13/"
+let filemgr = FileManager.default
+//let dirName = "/Volumes/homes/dimeglio/cosplay/arknkrknsd/"
+var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
+
+let argument = CommandLine.arguments
+
+if argument.count != 1 {
+    var isDir: ObjCBool = false
+    if argument[1] == "-d" {
+        guard filemgr.fileExists(atPath: argument[2], isDirectory: &isDir)
+        else {
+            print()
+            print("Can't find directory \(argument[2])")
+            print("Usage: wallhe -d \"/User/directory/where/images/are\"")
+            exit(1)
+        }
+        dirName = argument[2] + "/"
+    } else {
+        print()
+        print("Usage: wallhe -d \"/User/directory/where/images/are\"")
+        exit(1)
+    }
+}
 
 let directoryURL = URL(string: dirName)!
-let filemgr = FileManager.default
 
 do {
     let filelist = try filemgr.contentsOfDirectory(atPath: dirName)
-
-   // for filename in filelist {
-    let theNextUrl = "file://" + dirName + filelist.randomElement()!
-        print("\(theNextUrl)")
+    let pickedFile =  dirName + filelist.randomElement()!
+    let theNextUrl = "file://" + pickedFile
+    
+    if (pickedFile.lowercased().contains(".jpg") || pickedFile.contains(".jpeg") || pickedFile.contains(".png")) {
         updateWallpaper(path: theNextUrl)
-   // }
+    }
 } catch let error {
     print("Error: \(error.localizedDescription)")
 }
