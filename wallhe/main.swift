@@ -7,7 +7,7 @@
 //  Created by Aniello Di Meglio on 2021-11-03.
 //
 //  Parts were converted to Swift 5.5 by Swiftify v5.5.22755 - https://swiftify.com/
-//
+//  Inspired by Wally by Antonio Di Monaco
 
 import Foundation
 import SwiftUI
@@ -145,12 +145,49 @@ func updateWallpaper(path: String) {
     setBackground(theURL: (destinationURL.absoluteString))
 }
 
+//class prepareWallpaper {
+//    var interator: Int
+//    var seconds: Double
+//    var filelist: Array<String>
+//    var timer: Timer
+//
+//    init(seconds: Double, filelist: Array<String>) {
+//        self.interator = 0;
+//        self.seconds = seconds
+//        self.filelist = filelist
+//        self.timer = Timer.init()
+//    }
+//
+//    func createTimer() {
+//        self.timer = Timer.scheduledTimer(timeInterval: 10.0,
+//                                         target: self,
+//                                         selector: #selector(fire),
+//                                         userInfo: nil,
+//                                         repeats: true)
+//
+//        DispatchQueue.main.asyncAfter(deadline: .now() + self.seconds, execute: {
+//            self.timer.fire()
+//        })
+//    }
+//
+//    @objc func fire() {
+//        let theNextUrl = "file://" + self.filelist[self.interator]
+//            self.interator+=1
+//            updateWallpaper(path: theNextUrl)
+//            if self.interator>filelist.count {
+//                timer.invalidate()
+//            }
+//
+//    }
+//}
+
 // begin "main" section
 
 // set-up location where to read image files from
 var debug:Bool = false
 let filemgr = FileManager.default
 var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
+
 
 // look to see if there is a command-line argument (at this time only -d is supported).
 let argument = CommandLine.arguments
@@ -179,7 +216,7 @@ if argument.count != 1 {
 let directoryURL = URL(string: dirName)!
 
 do {
-    let filelist = try filemgr.contentsOfDirectory(atPath: dirName)
+    var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
     if debug { print("filelist count = \(filelist.count)") }
     guard filelist.count > 0 else {
         print()
@@ -187,21 +224,40 @@ do {
         exit(1)
     }
     
-    var pickedFile: String
     var checkRange: Int = 0
-    repeat {
-        pickedFile =  dirName + filelist.randomElement()!
-        checkRange+=1
-        guard checkRange<=filelist.count else {
-            print()
-            print("No images found in directory \(directoryURL)")
-            exit(1)
-        }
-    } while (!(pickedFile.lowercased().contains(".jpg") || pickedFile.lowercased().contains(".jpeg") || pickedFile.lowercased().contains(".png")))
-    
-    let theNextUrl = "file://" + pickedFile
-    updateWallpaper(path: theNextUrl)
-    
-} catch let error {
-    print("Error: \(error.localizedDescription)")
+    let seconds: UInt32 = 10
+    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png")}
+    filelist.shuffle()
+    print(filelist)
+    for imageFile in filelist {
+        sleep(seconds)
+        let imageFile = "file://" + dirName + "/" + imageFile
+        updateWallpaper(path: imageFile)
+    }
+
+//    Timer.scheduledTimer(withTimeInterval: seconds, repeats: true, block: { timer in
+//        let theNextUrl = "file://" + filelist[checkRange]
+//        checkRange+=1
+//        updateWallpaper(path: theNextUrl)
+//        if checkRange>filelist.count {
+//            timer.invalidate()
+//        }
+//    })
 }
+//    var pickedFile: String
+//    repeat {
+//        pickedFile =  dirName + filelist.randomElement()!
+//        checkRange+=1
+//        guard checkRange<=filelist.count else {
+//            print()
+//            print("No images found in directory \(directoryURL)")
+//            exit(1)
+//        }
+//    } while (!(pickedFile.lowercased().contains(".jpg") || pickedFile.lowercased().contains(".jpeg") || pickedFile.lowercased().contains(".png")))
+//
+//    let theNextUrl = "file://" + pickedFile
+//    updateWallpaper(path: theNextUrl)
+    
+//} //catch let error {
+   // print("Error: \(error.localizedDescription)")
+//}
