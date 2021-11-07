@@ -163,12 +163,14 @@ if argument.count != 1 {
             print()
             print("Can't find directory \(argument[2])")
             print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
+            print()
             exit(1)
         }
         dirName = argument[2] + "/"
     } else {
         print()
         print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
+        print()
         exit(1)
     }
 }
@@ -184,16 +186,22 @@ do {
         print("No images found in directory \(directoryURL)")
         exit(1)
     }
-    let pickedFile =  dirName + filelist.randomElement()!
-    let theNextUrl = "file://" + pickedFile
     
-    if (pickedFile.lowercased().contains(".jpg") || pickedFile.contains(".jpeg") || pickedFile.contains(".png")) {
-        updateWallpaper(path: theNextUrl)
-    } else {
-        print()
-        print("Non-image file found in directory \(directoryURL)")
-        exit(1)
-    }
+    var pickedFile: String
+    var checkRange: Int = 0
+    repeat {
+        pickedFile =  dirName + filelist.randomElement()!
+        checkRange+=1
+        guard checkRange<=filelist.count else {
+            print()
+            print("No images found in directory \(directoryURL)")
+            exit(1)
+        }
+    } while (!(pickedFile.lowercased().contains(".jpg") || pickedFile.lowercased().contains(".jpeg") || pickedFile.lowercased().contains(".png")))
+    
+    let theNextUrl = "file://" + pickedFile
+    updateWallpaper(path: theNextUrl)
+    
 } catch let error {
     print("Error: \(error.localizedDescription)")
 }
