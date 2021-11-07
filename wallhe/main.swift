@@ -1,6 +1,6 @@
 //
 //  main.swift
-//  wallhe
+//  wallhe requires MacOS 10.15+
 //
 //  Swift 5
 //
@@ -13,6 +13,7 @@ import Foundation
 import SwiftUI
 import CoreGraphics
 
+// setBackground: input=path to prepared image file. Updates the display with the new wallpaper on all screens.
 func setBackground(theURL: String) {
     let workspace = NSWorkspace()
     let fixedURL = URL(string: theURL)
@@ -27,6 +28,7 @@ func setBackground(theURL: String) {
     }
 }
 
+// fileName: outputs the filename to use. Can't use the same as MacOS will not update it otherwise.
 func fileName() -> String {
     var fileName = "wallhe-wallpaper1.png"
     let path = NSSearchPathForDirectoriesInDomains(.picturesDirectory, .userDomainMask, true)[0] as String
@@ -53,6 +55,7 @@ func fileName() -> String {
     return fileName
 }
 
+// buildWallpaper: input is the image; output is the tiled wallpaper ready to go.
 func buildWallpaper(sample: NSImage) -> NSImage {
     let screenSize = NSScreen.screenSize
     let sw = screenSize!.width
@@ -72,12 +75,14 @@ func buildWallpaper(sample: NSImage) -> NSImage {
     return resultImage
 }
 
+// extention to NSScreen to provide easy access screen to dimenstions
 extension NSScreen{
     static let screenWidth = NSScreen.main?.frame.width
     static let screenHeight = NSScreen.main?.frame.height
     static let screenSize = NSScreen.main?.frame.size
 }
 
+// extension to NSImage to write PNG formatted images for the wallpaper
 extension NSImage {
     var pngData: Data? {
         guard let tiffRepresentation = tiffRepresentation, let bitmapImage = NSBitmapImageRep(data: tiffRepresentation) else { return nil }
@@ -94,6 +99,7 @@ extension NSImage {
     }
 }
 
+// resizedImage: input = URL of input image; size = new size of image; output = new resized image
 func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
     guard let imageSource = CGImageSourceCreateWithURL(url as NSURL, nil),
         let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
@@ -117,6 +123,7 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
                    size: CGSize(width: size.width,height: size.height))
 }
 
+// updateWallpaper: input path to image
 func updateWallpaper(path: String) {
     let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
     let destinationURL: URL = desktopURL.appendingPathComponent(fileName())
@@ -137,10 +144,15 @@ func updateWallpaper(path: String) {
     }
     setBackground(theURL: (destinationURL.absoluteString))
 }
+
+// begin "main" section
+
+// set-up location where to read image files from
 var debug:Bool = false
 let filemgr = FileManager.default
 var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
 
+// look to see if there is a command-line argument (at this time only -d is supported).
 let argument = CommandLine.arguments
 
 if argument.count != 1 {
@@ -150,17 +162,18 @@ if argument.count != 1 {
         else {
             print()
             print("Can't find directory \(argument[2])")
-            print("Usage: wallhe -d \"/User/directory/where/images/are\"")
+            print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
             exit(1)
         }
         dirName = argument[2] + "/"
     } else {
         print()
-        print("Usage: wallhe -d \"/User/directory/where/images/are\"")
+        print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
         exit(1)
     }
 }
 
+// we should have a directory
 let directoryURL = URL(string: dirName)!
 
 do {
@@ -178,7 +191,7 @@ do {
         updateWallpaper(path: theNextUrl)
     } else {
         print()
-        print("No valid images found in directory \(directoryURL)")
+        print("Non-image file found in directory \(directoryURL)")
         exit(1)
     }
 } catch let error {
