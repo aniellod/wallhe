@@ -14,7 +14,8 @@
 import Foundation
 import SwiftUI
 import CoreGraphics
-import Moderator
+import Moderator  // https://github.com/kareman/Moderator.git
+import SwiftImage //https://github.com/koher/swift-image.git
 
 // setBackground: input=path to prepared image file. Updates the display with the new wallpaper on all screens.
 func setBackground(theURL: String) {
@@ -45,14 +46,14 @@ func fileName() -> String {
             do {
                 let fileToDeleteURL = url.appendingPathComponent("wallhe-wallpaper1.png")
                 try deleted.removeItem(at: fileToDeleteURL!)
-               } catch { print(error) }
+               } catch { return fileName }
         } else {
             fileName = "wallhe-wallpaper1.png"
             do {
                 let deleted = FileManager()
                 let fileToDeleteURL = url.appendingPathComponent("wallhe-wallpaper2.png")
                 try deleted.removeItem(at: fileToDeleteURL!)
-               } catch { print(error) }
+               } catch { return fileName }
         }
     }
     return fileName
@@ -96,7 +97,7 @@ extension NSImage {
             try pngData?.write(to: url, options: options)
             return true
         } catch {
-            print(error)
+            if (debug) { print(error) }
             return false
         }
     }
@@ -104,26 +105,32 @@ extension NSImage {
 
 // resizedImage: input = URL of input image; size = new size of image; output = new resized image
 func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
-    guard let imageSource = CGImageSourceCreateWithURL(url as NSURL, nil),
-        let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
-    else {
-        return nil
+    if url.path.lowercased().contains(".png") {
+        let thisImage = SwiftImage.Image<RGB<UInt8>>(contentsOfFile: url.path)
+        let result = thisImage?.resizedTo(width: Int(size.width), height: Int(size.height))
+        let scaledImage = result?.nsImage
+        return scaledImage
+    } else { // this is faster but can't handle png files.
+        guard let imageSource = CGImageSourceCreateWithURL(url as NSURL, nil),
+            let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
+        else {
+            return nil
+        }
+        let context = CGContext(data: nil,
+                                width: Int(size.width),
+                                height: Int(size.height),
+                                bitsPerComponent: image.bitsPerComponent,
+                                bytesPerRow: 0,
+                                space: image.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
+                                bitmapInfo: image.bitmapInfo.rawValue)
+        context?.interpolationQuality = .high
+        context?.draw(image, in: CGRect(origin: .zero, size: size))
+
+        guard let scaledImage = context?.makeImage() else { return nil }
+
+        return NSImage(cgImage: scaledImage,
+                       size: CGSize(width: size.width,height: size.height))
     }
-
-    let context = CGContext(data: nil,
-                            width: Int(size.width),
-                            height: Int(size.height),
-                            bitsPerComponent: image.bitsPerComponent,
-                            bytesPerRow: 0,
-                            space: image.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
-                            bitmapInfo: image.bitmapInfo.rawValue)
-    context?.interpolationQuality = .high
-    context?.draw(image, in: CGRect(origin: .zero, size: size))
-
-    guard let scaledImage = context?.makeImage() else { return nil }
-
-    return NSImage(cgImage: scaledImage,
-                   size: CGSize(width: size.width,height: size.height))
 }
 
 // updateWallpaper: input path to image
@@ -133,7 +140,10 @@ func updateWallpaper(path: String) {
     
     let theURL = URL(fileURLWithPath: path)
     let origImage = NSImage(contentsOf: theURL)
-    let height = origImage!.size.height
+    guard let height = origImage?.size.height else {
+        if (debug) { print("Error in calculating height of image at \(path)") }
+        return
+    }
     let ratio = NSScreen.screenHeight! / height
     let newWidth = (origImage!.size.width) * ratio
 
@@ -152,9 +162,11 @@ func updateWallpaper(path: String) {
 }
 
 // begin "main" section
-var debug:Bool = false
 
-let arguments = Moderator(description: "Automatically add code to Swift Package Manager projects to run unit tests on Linux.")
+
+let arguments = Moderator(description: "Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors.")
+let help = arguments.add(.option("h","help", description: "Prints this message."))
+let toDebug = arguments.add(.option("D","debug", description: "Enable debug messages."))
 let directory = arguments.add(
             .optionWithValue("d", "directory", name: "image directory path", description: "The full path to the image folder. Default is Picture folder.")
             .default("none"))
@@ -163,11 +175,33 @@ let delay = arguments.add(
             .default("60"))
 do {
    try arguments.parse()
-} catch { print(error) }
+} catch {
+    print(error)
+    exit(0) }
+
+if help.value {
+print("""
+
+Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors. \
+      
+      Usage: wallhe
+        -D,--debug:
+            Enable debug messages.
+        -d,--directory <image directory path>:
+            The full path to the image folder. Default is Picture folder.
+        -s,--seconds <seconds delay>:
+            The delay in seconds between each image. Default 60 seconds. Default = '60'.
+"""
+)
+    exit(0)
+}
+
+var debug:Bool = false
+if toDebug.value { debug = true }
 
 if debug { print("Delay = \(delay)") }
-// set-up location where to read image files from
 
+// set-up location where to read image files from
 let filemgr = FileManager.default
 var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
 
@@ -187,9 +221,8 @@ do {
     var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
     if debug { print("filelist count = \(filelist.count)") }
     
-    var seconds: UInt32 = UInt32(Int(delay.value)!)
-    if debug { seconds = 5 }
-    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png")}
+    let seconds: UInt32 = UInt32(abs(Int(delay.value)!))
+    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png") || $0.lowercased().contains(".bmp")}
     
     guard filelist.count > 0 else {
         print()
@@ -200,6 +233,7 @@ do {
     while 1==1 {
         filelist.shuffle()
         for imageFile in filelist {
+            if (debug) { print(imageFile) }
             let imageFile = dirName + "/" + imageFile
             updateWallpaper(path: imageFile)
             sleep(seconds)

@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3439AF2D2732AAB500621803 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3439AF2C2732AAB500621803 /* main.swift */; };
-		34DA8BA727384CD50063DCC9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 34DA8BA627384CD50063DCC9 /* ArgumentParser */; };
+		346D9B2327397D9900EF4387 /* SwiftImage in Frameworks */ = {isa = PBXBuildFile; productRef = 346D9B2227397D9900EF4387 /* SwiftImage */; };
 		34DA8BAA27386E780063DCC9 /* Moderator in Frameworks */ = {isa = PBXBuildFile; productRef = 34DA8BA927386E780063DCC9 /* Moderator */; };
 /* End PBXBuildFile section */
 
@@ -35,8 +35,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				346D9B2327397D9900EF4387 /* SwiftImage in Frameworks */,
 				34DA8BAA27386E780063DCC9 /* Moderator in Frameworks */,
-				34DA8BA727384CD50063DCC9 /* ArgumentParser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,8 +85,8 @@
 			);
 			name = wallhe;
 			packageProductDependencies = (
-				34DA8BA627384CD50063DCC9 /* ArgumentParser */,
 				34DA8BA927386E780063DCC9 /* Moderator */,
+				346D9B2227397D9900EF4387 /* SwiftImage */,
 			);
 			productName = wallhe;
 			productReference = 3439AF292732AAB500621803 /* wallhe */;
@@ -117,8 +117,8 @@
 			);
 			mainGroup = 3439AF202732AAB500621803;
 			packageReferences = (
-				34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
 				34DA8BA827386E780063DCC9 /* XCRemoteSwiftPackageReference "Moderator" */,
+				346D9B2127397D9900EF4387 /* XCRemoteSwiftPackageReference "swift-image" */,
 			);
 			productRefGroup = 3439AF2A2732AAB500621803 /* Products */;
 			projectDirPath = "";
@@ -310,12 +310,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+		346D9B2127397D9900EF4387 /* XCRemoteSwiftPackageReference "swift-image" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			repositoryURL = "https://github.com/koher/swift-image.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 0.7.1;
 			};
 		};
 		34DA8BA827386E780063DCC9 /* XCRemoteSwiftPackageReference "Moderator" */ = {
@@ -329,10 +329,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		34DA8BA627384CD50063DCC9 /* ArgumentParser */ = {
+		346D9B2227397D9900EF4387 /* SwiftImage */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
-			productName = ArgumentParser;
+			package = 346D9B2127397D9900EF4387 /* XCRemoteSwiftPackageReference "swift-image" */;
+			productName = SwiftImage;
 		};
 		34DA8BA927386E780063DCC9 /* Moderator */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -7,15 +7,15 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "F0F9D7D4-6517-4BF9-B391-7B5101C65EC7"
-            shouldBeEnabled = "Yes"
+            uuid = "BD98875D-A0DB-4454-B9CC-4BD9C4DC0BB8"
+            shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "wallhe/main.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "140"
-            endingLineNumber = "140"
+            startingLineNumber = "150"
+            endingLineNumber = "150"
             landmarkName = "updateWallpaper(path:)"
             landmarkType = "9">
          </BreakpointContent>
