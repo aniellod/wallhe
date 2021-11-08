@@ -130,7 +130,6 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
 func updateWallpaper(path: String) {
     let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
     let destinationURL: URL = desktopURL.appendingPathComponent(fileName())
-   
     
     let theURL = URL(fileURLWithPath: path)
     let origImage = NSImage(contentsOf: theURL)
@@ -149,7 +148,7 @@ func updateWallpaper(path: String) {
 }
 
 // begin "main" section
-var debug:Bool = true
+var debug:Bool = false
 
 let arguments = Moderator(description: "Automatically add code to Swift Package Manager projects to run unit tests on Linux.")
 let directory = arguments.add(
@@ -171,6 +170,7 @@ var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainM
 if directory.value != "none" {
     dirName = directory.value
 }
+
 if (debug) {print("directory = \(dirName)")}
 
 // we should have a directory
@@ -183,7 +183,8 @@ do {
     var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
     if debug { print("filelist count = \(filelist.count)") }
     
-    let seconds: UInt32 = UInt32(Int(delay.value)!)
+    var seconds: UInt32 = UInt32(Int(delay.value)!)
+    if debug { seconds = 5 }
     filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png")}
     
     guard filelist.count > 0 else {
