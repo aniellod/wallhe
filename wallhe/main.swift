@@ -8,10 +8,13 @@
 //
 //  Parts were converted to Swift 5.5 by Swiftify v5.5.22755 - https://swiftify.com/
 //  Inspired by Wally by Antonio Di Monaco
+//
+//  Warning - very buggy and error checking is not there
 
 import Foundation
 import SwiftUI
 import CoreGraphics
+import Moderator
 
 // setBackground: input=path to prepared image file. Updates the display with the new wallpaper on all screens.
 func setBackground(theURL: String) {
@@ -127,15 +130,15 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
 func updateWallpaper(path: String) {
     let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
     let destinationURL: URL = desktopURL.appendingPathComponent(fileName())
+   
     
-    let theURL = URL(string: path)
-
-    let origImage = NSImage(contentsOf: theURL!)
+    let theURL = URL(fileURLWithPath: path)
+    let origImage = NSImage(contentsOf: theURL)
     let height = origImage!.size.height
     let ratio = NSScreen.screenHeight! / height
     let newWidth = (origImage!.size.width) * ratio
 
-    let newImage = resizedImage(at: theURL!, for: CGSize(width: newWidth, height: 1080))
+    let newImage = resizedImage(at: theURL, for: CGSize(width: newWidth, height: NSScreen.screenHeight!))
     let finalImage = buildWallpaper(sample: newImage!)
     
     guard finalImage.pngWrite(to: destinationURL) else {
@@ -145,119 +148,56 @@ func updateWallpaper(path: String) {
     setBackground(theURL: (destinationURL.absoluteString))
 }
 
-//class prepareWallpaper {
-//    var interator: Int
-//    var seconds: Double
-//    var filelist: Array<String>
-//    var timer: Timer
-//
-//    init(seconds: Double, filelist: Array<String>) {
-//        self.interator = 0;
-//        self.seconds = seconds
-//        self.filelist = filelist
-//        self.timer = Timer.init()
-//    }
-//
-//    func createTimer() {
-//        self.timer = Timer.scheduledTimer(timeInterval: 10.0,
-//                                         target: self,
-//                                         selector: #selector(fire),
-//                                         userInfo: nil,
-//                                         repeats: true)
-//
-//        DispatchQueue.main.asyncAfter(deadline: .now() + self.seconds, execute: {
-//            self.timer.fire()
-//        })
-//    }
-//
-//    @objc func fire() {
-//        let theNextUrl = "file://" + self.filelist[self.interator]
-//            self.interator+=1
-//            updateWallpaper(path: theNextUrl)
-//            if self.interator>filelist.count {
-//                timer.invalidate()
-//            }
-//
-//    }
-//}
-
 // begin "main" section
+var debug:Bool = true
 
+let arguments = Moderator(description: "Automatically add code to Swift Package Manager projects to run unit tests on Linux.")
+let directory = arguments.add(
+            .optionWithValue("d", "directory", name: "image directory path", description: "The full path to the image folder. Default is Picture folder.")
+            .default("none"))
+let delay = arguments.add(
+            .optionWithValue("s", "seconds", name: "seconds delay", description: "The delay in seconds between each image. Default 60 seconds.")
+            .default("60"))
+do {
+   try arguments.parse()
+} catch { print(error) }
+
+if debug { print("Delay = \(delay)") }
 // set-up location where to read image files from
-var debug:Bool = false
+
 let filemgr = FileManager.default
 var dirName = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!.path + "/"
 
-
-// look to see if there is a command-line argument (at this time only -d is supported).
-let argument = CommandLine.arguments
-
-if argument.count != 1 {
-    var isDir: ObjCBool = false
-    if argument[1] == "-d" {
-        guard filemgr.fileExists(atPath: argument[2], isDirectory: &isDir)
-        else {
-            print()
-            print("Can't find directory \(argument[2])")
-            print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
-            print()
-            exit(1)
-        }
-        dirName = argument[2] + "/"
-    } else {
-        print()
-        print("Usage: wallhe -d \"/User/directory/where great/images/are\"")
-        print()
-        exit(1)
-    }
+if directory.value != "none" {
+    dirName = directory.value
 }
+if (debug) {print("directory = \(dirName)")}
 
 // we should have a directory
-let directoryURL = URL(string: dirName)!
+let directoryURL = URL(fileURLWithPath: dirName)
+if !directoryURL.isFileURL {
+    print("directory is nil")
+}
 
 do {
     var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
     if debug { print("filelist count = \(filelist.count)") }
+    
+    let seconds: UInt32 = UInt32(Int(delay.value)!)
+    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png")}
+    
     guard filelist.count > 0 else {
         print()
-        print("No images found in directory \(directoryURL)")
+        print("No images found in directory \(String(describing: directoryURL))")
         exit(1)
     }
     
-    var checkRange: Int = 0
-    let seconds: UInt32 = 10
-    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png")}
-    filelist.shuffle()
-    print(filelist)
-    for imageFile in filelist {
-        sleep(seconds)
-        let imageFile = "file://" + dirName + "/" + imageFile
-        updateWallpaper(path: imageFile)
+    while 1==1 {
+        filelist.shuffle()
+        for imageFile in filelist {
+            let imageFile = dirName + "/" + imageFile
+            updateWallpaper(path: imageFile)
+            sleep(seconds)
+        }
     }
-
-//    Timer.scheduledTimer(withTimeInterval: seconds, repeats: true, block: { timer in
-//        let theNextUrl = "file://" + filelist[checkRange]
-//        checkRange+=1
-//        updateWallpaper(path: theNextUrl)
-//        if checkRange>filelist.count {
-//            timer.invalidate()
-//        }
-//    })
 }
-//    var pickedFile: String
-//    repeat {
-//        pickedFile =  dirName + filelist.randomElement()!
-//        checkRange+=1
-//        guard checkRange<=filelist.count else {
-//            print()
-//            print("No images found in directory \(directoryURL)")
-//            exit(1)
-//        }
-//    } while (!(pickedFile.lowercased().contains(".jpg") || pickedFile.lowercased().contains(".jpeg") || pickedFile.lowercased().contains(".png")))
-//
-//    let theNextUrl = "file://" + pickedFile
-//    updateWallpaper(path: theNextUrl)
-    
-//} //catch let error {
-   // print("Error: \(error.localizedDescription)")
-//}

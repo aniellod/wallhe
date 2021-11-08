@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		3439AF2D2732AAB500621803 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3439AF2C2732AAB500621803 /* main.swift */; };
+		34DA8BA727384CD50063DCC9 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = 34DA8BA627384CD50063DCC9 /* ArgumentParser */; };
+		34DA8BAA27386E780063DCC9 /* Moderator in Frameworks */ = {isa = PBXBuildFile; productRef = 34DA8BA927386E780063DCC9 /* Moderator */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -33,6 +35,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34DA8BAA27386E780063DCC9 /* Moderator in Frameworks */,
+				34DA8BA727384CD50063DCC9 /* ArgumentParser in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -80,6 +84,10 @@
 			dependencies = (
 			);
 			name = wallhe;
+			packageProductDependencies = (
+				34DA8BA627384CD50063DCC9 /* ArgumentParser */,
+				34DA8BA927386E780063DCC9 /* Moderator */,
+			);
 			productName = wallhe;
 			productReference = 3439AF292732AAB500621803 /* wallhe */;
 			productType = "com.apple.product-type.tool";
@@ -108,6 +116,10 @@
 				Base,
 			);
 			mainGroup = 3439AF202732AAB500621803;
+			packageReferences = (
+				34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */,
+				34DA8BA827386E780063DCC9 /* XCRemoteSwiftPackageReference "Moderator" */,
+			);
 			productRefGroup = 3439AF2A2732AAB500621803 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -296,6 +308,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-argument-parser.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+		34DA8BA827386E780063DCC9 /* XCRemoteSwiftPackageReference "Moderator" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kareman/Moderator";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.2.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		34DA8BA627384CD50063DCC9 /* ArgumentParser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 34DA8BA527384CD40063DCC9 /* XCRemoteSwiftPackageReference "swift-argument-parser" */;
+			productName = ArgumentParser;
+		};
+		34DA8BA927386E780063DCC9 /* Moderator */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 34DA8BA827386E780063DCC9 /* XCRemoteSwiftPackageReference "Moderator" */;
+			productName = Moderator;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 3439AF212732AAB500621803 /* Project object */;
 }
