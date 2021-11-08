@@ -137,8 +137,12 @@ func updateWallpaper(path: String) {
     let ratio = NSScreen.screenHeight! / height
     let newWidth = (origImage!.size.width) * ratio
 
-    let newImage = resizedImage(at: theURL, for: CGSize(width: newWidth, height: NSScreen.screenHeight!))
-    let finalImage = buildWallpaper(sample: newImage!)
+    guard let newImage = resizedImage(at: theURL, for: CGSize(width: newWidth, height: NSScreen.screenHeight!))
+    else {
+        print("Error \(theURL) cannot be opened.")
+        return
+    }
+    let finalImage = buildWallpaper(sample: newImage)
     
     guard finalImage.pngWrite(to: destinationURL) else {
         print("File count not be saved")
