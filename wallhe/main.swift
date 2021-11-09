@@ -32,7 +32,8 @@ func setBackground(theURL: String) {
     }
 }
 
-// fileName: outputs the filename to use. Can't use the same as MacOS will not update it otherwise.
+// fileName: outputs the filename to use. This is a really silly hack as it should be able to tell
+// MacOS to reload the wallpaper file. Need to switch names as otherwise MacOS will not update it otherwise.
 func fileName() -> String {
     var fileName = "wallhe-wallpaper1.png"
     let path = NSSearchPathForDirectoriesInDomains(.picturesDirectory, .userDomainMask, true)[0] as String
@@ -60,7 +61,16 @@ func fileName() -> String {
 }
 
 // buildWallpaper: input is the image; output is the tiled wallpaper ready to go.
-func buildWallpaper(sample: NSImage) -> NSImage {
+func buildWallpaper(sample: NSImage, text: String...) -> NSImage {
+    var textFont = NSFont(name: "Helvetica Bold", size: 24)!
+    let textFontAttributes = [
+        NSAttributedString.Key.font: textFont,
+        NSAttributedString.Key.foregroundColor: NSColor.gray,
+        NSAttributedString.Key.backgroundColor: NSColor.black
+    ]
+    
+    var drawText=NSString(string: text[0])
+
     let screenSize = NSScreen.screenSize
     let sw = screenSize!.width
     let sh = screenSize!.height
@@ -68,12 +78,14 @@ func buildWallpaper(sample: NSImage) -> NSImage {
     let resultImage = NSImage(size: (NSMakeSize(sw,sh)))
     
     resultImage.lockFocus()
+    
     do {
         for x in 0...tiles {
             sample.draw(at: NSPoint(x: Int(sample.size.width) * x, y: 0), from: NSRect.zero, operation: NSCompositingOperation.sourceOver, fraction: 1.0)
         }
         sample.draw(at: NSPoint(x: Int(sample.size.width) * tiles, y: 0), from: NSRect(x: 0, y:0, width: (sw - sample.size.width * 2), height: sh), operation: NSCompositingOperation.sourceOver, fraction: 1.0)
     }
+    drawText.draw(at: NSPoint(x: 20, y: 20), withAttributes: textFontAttributes)
     resultImage.unlockFocus()
     
     return resultImage
@@ -134,7 +146,7 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
 }
 
 // updateWallpaper: input path to image
-func updateWallpaper(path: String) {
+func updateWallpaper(path: String, name: String) {
     let desktopURL = FileManager.default.urls(for: .picturesDirectory, in: .userDomainMask).first!
     let destinationURL: URL = desktopURL.appendingPathComponent(fileName())
     
@@ -152,7 +164,15 @@ func updateWallpaper(path: String) {
         print("Error \(theURL) cannot be opened.")
         return
     }
-    let finalImage = buildWallpaper(sample: newImage)
+    var displayedText = ""
+    if showPath.value {
+        displayedText = path
+    }
+    if showName.value {
+        displayedText = name
+    }
+    let finalImage = buildWallpaper(sample: newImage, text: displayedText)
+    
     
     guard finalImage.pngWrite(to: destinationURL) else {
         print("File count not be saved")
@@ -167,11 +187,13 @@ func updateWallpaper(path: String) {
 let arguments = Moderator(description: "Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors.")
 let help = arguments.add(.option("h","help", description: "Prints this message."))
 let toDebug = arguments.add(.option("D","debug", description: "Enable debug messages."))
+let showPath = arguments.add(.option("p","path", description: "Show full path of image."))
+let showName = arguments.add(.option("n","name", description: "Show name of image."))
 let directory = arguments.add(
             .optionWithValue("d", "directory", name: "image directory path", description: "The full path to the image folder. Default is Picture folder.")
             .default("none"))
 let delay = arguments.add(
-            .optionWithValue("s", "seconds", name: "seconds delay", description: "The delay in seconds between each image. Default 60 seconds.")
+            .optionWithValue("s", "seconds", name: "seconds delay", description: "The delay in seconds between each image.")
             .default("60"))
 do {
    try arguments.parse()
@@ -184,13 +206,19 @@ print("""
 
 Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors. \
       
-      Usage: wallhe
-        -D,--debug:
-            Enable debug messages.
-        -d,--directory <image directory path>:
-            The full path to the image folder. Default is Picture folder.
-        -s,--seconds <seconds delay>:
-            The delay in seconds between each image. Default 60 seconds. Default = '60'.
+Usage: wallhe
+  -h,--help:
+      Prints this message.
+  -D,--debug:
+      Enable debug messages.
+  -p,--path:
+      Show full path of image.
+  -n,--name:
+      Show name of image.
+  -d,--directory <image directory path>:
+      The full path to the image folder. Default is Picture folder.
+  -s,--seconds <seconds delay>:
+      The delay in seconds between each image. Default = '60'.
 """
 )
     exit(0)
@@ -234,8 +262,8 @@ do {
         filelist.shuffle()
         for imageFile in filelist {
             if (debug) { print(imageFile) }
-            let imageFile = dirName + "/" + imageFile
-            updateWallpaper(path: imageFile)
+            let fullpath = dirName + "/" + imageFile
+            updateWallpaper(path: fullpath, name: imageFile)
             sleep(seconds)
         }
     }
