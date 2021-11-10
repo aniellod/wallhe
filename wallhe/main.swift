@@ -16,7 +16,6 @@
 //      Moderator command line parsing: https://github.com/kareman/Moderator
 //      Swift-Image to handle .png:     https://github.com/koher/swift-image.git
 //      Accessibility control to enable keyboard control of wallpaper
-//
 
 import Foundation
 import SwiftUI
@@ -272,7 +271,6 @@ xla:    if keyCode == 100 {
             if (showPath.value == true && showName.value == false) {
                 showPath.value = false
                 showName.value = false
-                
                 updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
                 break xla
             }
