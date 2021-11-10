@@ -6,16 +6,21 @@
 //
 //  Created by Aniello Di Meglio on 2021-11-03.
 //
-//  Parts were converted to Swift 5.5 by Swiftify v5.5.22755 - https://swiftify.com/
+//  Parts were converted to Swift 5.5 from Objective-C by Swiftify v5.5.22755 - https://swiftify.com/
 //  Inspired by Wally by Antonio Di Monaco
 //
-//  Warning - very buggy and error checking is not there
+//  Warning - very buggy and little error checking. Cargo culting...
 //
 //
 //  Requirements:
 //      Moderator command line parsing: https://github.com/kareman/Moderator
 //      Swift-Image to handle .png:     https://github.com/koher/swift-image.git
 //      Accessibility control to enable keyboard control of wallpaper
+//
+//  Command like based very basic wallpaper controler for MacOS 10.15+
+//
+//  Specify image folder and delay, Wallhe will randomly pick an image, resize/tile it to fit all visible desktops then loop through all images. Control-C to exit.
+//
 
 import Foundation
 import SwiftUI
