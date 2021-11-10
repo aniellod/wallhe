@@ -10,12 +10,61 @@
 //  Inspired by Wally by Antonio Di Monaco
 //
 //  Warning - very buggy and error checking is not there
+//
+//
+//  Requirements:
+//      Moderator command line parsing: https://github.com/kareman/Moderator
+//      Swift-Image to handle .png:     https://github.com/koher/swift-image.git
+//      Accessibility control to enable keyboard control of wallpaper
+//
 
 import Foundation
 import SwiftUI
 import CoreGraphics
 import Moderator  // https://github.com/kareman/Moderator.git
-import SwiftImage //https://github.com/koher/swift-image.git
+import SwiftImage // https://github.com/koher/swift-image.git
+
+class thread2 {
+    
+    var filelist: Array<String>
+    var seconds: UInt32
+    
+    init() {
+        self.seconds = 0
+        self.filelist = []
+    }
+    
+    func setFilelist(_ filelist: Array<String>) {
+        self.filelist = filelist
+    }
+    
+    func setSeconds(_ seconds: UInt32) {
+        self.seconds = seconds
+    }
+    
+    func getFilelist() -> Array<String> {
+        return self.filelist
+    }
+    
+    func getSeconds() -> UInt32 {
+        return self.seconds
+    }
+    
+    func start() {
+        let thread = Thread.init(target: self, selector: #selector(mainLoop), object: nil)
+        thread.start()
+    }
+    
+    @objc func mainLoop() {
+        self.filelist.shuffle()
+            for imageFile in filelist {
+                if (debug) { print(imageFile) }
+                let fullpath = dirName + "/" + imageFile
+                updateWallpaper(path: fullpath, name: imageFile)
+                sleep(self.seconds)
+            }
+    }
+}
 
 // setBackground: input=path to prepared image file. Updates the display with the new wallpaper on all screens.
 func setBackground(theURL: String) {
@@ -62,14 +111,14 @@ func fileName() -> String {
 
 // buildWallpaper: input is the image; output is the tiled wallpaper ready to go.
 func buildWallpaper(sample: NSImage, text: String...) -> NSImage {
-    var textFont = NSFont(name: "Helvetica Bold", size: 24)!
+    let textFont = NSFont(name: "Helvetica Bold", size: 24)!
     let textFontAttributes = [
         NSAttributedString.Key.font: textFont,
         NSAttributedString.Key.foregroundColor: NSColor.gray,
         NSAttributedString.Key.backgroundColor: NSColor.black
     ]
     
-    var drawText=NSString(string: text[0])
+    let drawText=NSString(string: text[0])
 
     let screenSize = NSScreen.screenSize
     let sw = screenSize!.width
@@ -85,7 +134,7 @@ func buildWallpaper(sample: NSImage, text: String...) -> NSImage {
         }
         sample.draw(at: NSPoint(x: Int(sample.size.width) * tiles, y: 0), from: NSRect(x: 0, y:0, width: (sw - sample.size.width * 2), height: sh), operation: NSCompositingOperation.sourceOver, fraction: 1.0)
     }
-    drawText.draw(at: NSPoint(x: 20, y: 20), withAttributes: textFontAttributes)
+    drawText.draw(at: NSPoint(x: 20, y: sh - 60), withAttributes: textFontAttributes)
     resultImage.unlockFocus()
     
     return resultImage
@@ -181,8 +230,65 @@ func updateWallpaper(path: String, name: String) {
     setBackground(theURL: (destinationURL.absoluteString))
 }
 
-// begin "main" section
+class EditorWindow: NSApplication {
+    override func keyDown(with event: NSEvent) {
+        super.keyDown(with: event)
+        Swift.print("Caught a key down: \(event.keyCode)!")
+    }
+}
 
+func myCGEventCallback(proxy : CGEventTapProxy, type : CGEventType, event : CGEvent, refcon : Optional<UnsafeMutableRawPointer>) -> Unmanaged<CGEvent>? {
+
+  //  if [.keyDown , .keyUp].contains(type) {
+    if [.keyUp].contains(type) {
+        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+xla:    if keyCode == 100 {
+            //showName.value = !showName.value
+            if (showPath.value == false && showName.value == false) {
+                showName.value = true
+                break xla
+            }
+            if (showPath.value == false && showName.value == true) {
+                showPath.value = true
+                showName.value = false
+                break xla
+            }
+            if (showPath.value == true && showName.value == false) {
+                showPath.value = false
+                showName.value = false
+                break xla
+            }
+            print("Image display= \(showName.value)")
+        }
+        if keyCode == 101 {
+            theWork.setSeconds(theWork.getSeconds() + UInt32(5))
+            print("Setting delay to \(theWork.getSeconds()) seconds.")
+        }
+        if keyCode == 98 {
+            if theWork.getSeconds() - UInt32(5) > 0 {
+                theWork.setSeconds(theWork.getSeconds() - UInt32(5))
+            }
+            print("Setting delay to \(theWork.getSeconds()) seconds.")
+        }
+        event.setIntegerValueField(.keyboardEventKeycode, value: keyCode)
+        print(keyCode)
+    }
+    return Unmanaged.passRetained(event)
+}
+
+let eventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
+guard let eventTap = CGEvent.tapCreate(tap: .cgSessionEventTap,
+                                       place: .headInsertEventTap,
+                                       options: .defaultTap,
+                                       eventsOfInterest: CGEventMask(eventMask),
+                                       callback: myCGEventCallback,
+                                       userInfo: nil) else {
+        print("failed to create event tap")
+        exit(1)
+}
+
+
+// begin "main" section
 
 let arguments = Moderator(description: "Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors.")
 let help = arguments.add(.option("h","help", description: "Prints this message."))
@@ -245,26 +351,24 @@ if !directoryURL.isFileURL {
     print("directory is nil")
 }
 
-do {
-    var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
-    if debug { print("filelist count = \(filelist.count)") }
-    
-    let seconds: UInt32 = UInt32(abs(Int(delay.value)!))
-    filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png") || $0.lowercased().contains(".bmp")}
-    
-    guard filelist.count > 0 else {
-        print()
-        print("No images found in directory \(String(describing: directoryURL))")
-        exit(1)
-    }
-    
-    while 1==1 {
-        filelist.shuffle()
-        for imageFile in filelist {
-            if (debug) { print(imageFile) }
-            let fullpath = dirName + "/" + imageFile
-            updateWallpaper(path: fullpath, name: imageFile)
-            sleep(seconds)
-        }
-    }
+var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
+if debug { print("filelist count = \(filelist.count)") }
+
+var seconds: UInt32 = UInt32(abs(Int(delay.value)!))
+filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png") || $0.lowercased().contains(".bmp")}
+
+guard filelist.count > 0 else {
+    print()
+    print("No images found in directory \(String(describing: directoryURL))")
+    exit(1)
 }
+
+let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
+CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, CFRunLoopMode.commonModes)
+CGEvent.tapEnable(tap: eventTap, enable: true)
+
+let theWork = thread2()
+theWork.setFilelist(filelist)
+theWork.setSeconds(seconds)
+theWork.start()
+CFRunLoopRun()
