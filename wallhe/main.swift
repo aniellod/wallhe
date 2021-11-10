@@ -28,10 +28,14 @@ class thread2 {
     
     var filelist: Array<String>
     var seconds: UInt32
+    var currentImageFile: String
+    var currentFullPath: String
     
     init() {
         self.seconds = 0
         self.filelist = []
+        self.currentImageFile = ""
+        self.currentFullPath = ""
     }
     
     func setFilelist(_ filelist: Array<String>) {
@@ -44,6 +48,14 @@ class thread2 {
     
     func getFilelist() -> Array<String> {
         return self.filelist
+    }
+    
+    func getCurrentImageFile() -> String {
+        return self.currentImageFile
+    }
+    
+    func getCurrentFullPath() -> String {
+        return self.currentFullPath
     }
     
     func getSeconds() -> UInt32 {
@@ -60,6 +72,8 @@ class thread2 {
             for imageFile in filelist {
                 if (debug) { print(imageFile) }
                 let fullpath = dirName + "/" + imageFile
+                self.currentImageFile = imageFile
+                self.currentFullPath = fullpath
                 updateWallpaper(path: fullpath, name: imageFile)
                 sleep(self.seconds)
             }
@@ -246,16 +260,20 @@ xla:    if keyCode == 100 {
             //showName.value = !showName.value
             if (showPath.value == false && showName.value == false) {
                 showName.value = true
+                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
                 break xla
             }
             if (showPath.value == false && showName.value == true) {
                 showPath.value = true
                 showName.value = false
+                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
                 break xla
             }
             if (showPath.value == true && showName.value == false) {
                 showPath.value = false
                 showName.value = false
+                
+                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
                 break xla
             }
             print("Image display= \(showName.value)")
@@ -355,7 +373,12 @@ var filelist = try filemgr.contentsOfDirectory(atPath: dirName)
 if debug { print("filelist count = \(filelist.count)") }
 
 var seconds: UInt32 = UInt32(abs(Int(delay.value)!))
-filelist = filelist.filter{ $0.lowercased().contains(".jp") || $0.lowercased().contains(".png") || $0.lowercased().contains(".bmp")}
+filelist = filelist.filter{
+       $0.lowercased().contains(".jp")
+    || $0.lowercased().contains(".png")
+    || $0.lowercased().contains(".bmp")
+    
+}
 
 guard filelist.count > 0 else {
     print()
