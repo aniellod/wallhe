@@ -9,7 +9,7 @@
 //  Parts were converted to Swift 5.5 from Objective-C by Swiftify v5.5.22755 - https://swiftify.com/
 //  Inspired by Wally by Antonio Di Monaco
 //
-//  Warning - very buggy and little error checking. Cargo culting...
+//  Warning - very buggy and little error checking. Lots of cargo culting...
 //
 //
 //  Requirements:
@@ -34,14 +34,16 @@ class thread2 {
     var seconds: UInt32
     var currentImageFile: String
     var currentFullPath: String
+    var count: Int
     
     init() {
         self.seconds = 0
         self.filelist = []
         self.currentImageFile = ""
         self.currentFullPath = ""
+        self.count = 0
     }
-    
+    // because I don't really understand swift getter/setters
     func setFilelist(_ filelist: Array<String>) {
         self.filelist = filelist
     }
@@ -74,13 +76,16 @@ class thread2 {
     @objc func mainLoop() {
         self.filelist.shuffle()
             for imageFile in filelist {
-                if (debug) { print(imageFile) }
                 let fullpath = dirName + "/" + imageFile
                 self.currentImageFile = imageFile
                 self.currentFullPath = fullpath
+                self.count+=1
+                if debug { print("Image \(self.count) of \(filelist.count) - \(imageFile)") }
                 updateWallpaper(path: fullpath, name: imageFile)
                 sleep(self.seconds)
             }
+        self.count = 0 //we're out of the loop, reset the count
+        self.start() //restart loop, otherwise this thread terminates.
     }
 }
 
@@ -129,9 +134,10 @@ func fileName() -> String {
 
 // buildWallpaper: input is the image; output is the tiled wallpaper ready to go.
 func buildWallpaper(sample: NSImage, text: String...) -> NSImage {
-    let textFont = NSFont(name: "Helvetica Bold", size: 24)!
+    let textFont = NSFont(name: "Helvetica Bold", size: 18)!
     let textFontAttributes = [
         NSAttributedString.Key.font: textFont,
+        NSAttributedString.Key.shadow: NSShadow(),
         NSAttributedString.Key.foregroundColor: NSColor.gray,
         NSAttributedString.Key.backgroundColor: NSColor.black
     ]
@@ -189,7 +195,7 @@ func resizedImage(at url: URL, for size: CGSize) -> NSImage? {
         let result = thisImage?.resizedTo(width: Int(size.width), height: Int(size.height))
         let scaledImage = result?.nsImage
         return scaledImage
-    } else { // this is faster but can't handle png files.
+    } else { // this is faster but doesn't seem to handle png files.
         guard let imageSource = CGImageSourceCreateWithURL(url as NSURL, nil),
             let image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil)
         else {
@@ -240,7 +246,6 @@ func updateWallpaper(path: String, name: String) {
     }
     let finalImage = buildWallpaper(sample: newImage, text: displayedText)
     
-    
     guard finalImage.pngWrite(to: destinationURL) else {
         print("File count not be saved")
         return
@@ -257,29 +262,23 @@ class EditorWindow: NSApplication {
 
 func myCGEventCallback(proxy : CGEventTapProxy, type : CGEventType, event : CGEvent, refcon : Optional<UnsafeMutableRawPointer>) -> Unmanaged<CGEvent>? {
 
-  //  if [.keyDown , .keyUp].contains(type) {
     if [.keyUp].contains(type) {
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-xla:    if keyCode == 100 {
-            //showName.value = !showName.value
+        if keyCode == 100 {
             if (showPath.value == false && showName.value == false) {
                 showName.value = true
-                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
-                break xla
+            } else {
+                if (showPath.value == false && showName.value == true) {
+                    showPath.value = true
+                    showName.value = false
+                } else {
+                    if (showPath.value == true && showName.value == false) {
+                        showPath.value = false
+                        showName.value = false
+                    }
+                }
             }
-            if (showPath.value == false && showName.value == true) {
-                showPath.value = true
-                showName.value = false
-                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
-                break xla
-            }
-            if (showPath.value == true && showName.value == false) {
-                showPath.value = false
-                showName.value = false
-                updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
-                break xla
-            }
-            print("Image display= \(showName.value)")
+            updateWallpaper(path: theWork.getCurrentFullPath(), name: theWork.getCurrentImageFile())
         }
         if keyCode == 101 {
             theWork.setSeconds(theWork.getSeconds() + UInt32(5))
@@ -292,7 +291,7 @@ xla:    if keyCode == 100 {
             print("Setting delay to \(theWork.getSeconds()) seconds.")
         }
         event.setIntegerValueField(.keyboardEventKeycode, value: keyCode)
-        print(keyCode)
+        //print(keyCode)
     }
     return Unmanaged.passRetained(event)
 }
@@ -313,11 +312,11 @@ guard let eventTap = CGEvent.tapCreate(tap: .cgSessionEventTap,
 
 let arguments = Moderator(description: "Wallpaper manager for MacOS. Select directory with images, Wallhe will resize and tile across all monitors.")
 let help = arguments.add(.option("h","help", description: "Prints this message."))
-let toDebug = arguments.add(.option("D","debug", description: "Enable debug messages."))
-let showPath = arguments.add(.option("p","path", description: "Show full path of image."))
+let toDebug = arguments.add(.option("v","verbose", description: "Output messages."))
+let showPath = arguments.add(.option("i","info", description: "Display image information on wallpaper."))
 let showName = arguments.add(.option("n","name", description: "Show name of image."))
 let directory = arguments.add(
-            .optionWithValue("d", "directory", name: "image directory path", description: "The full path to the image folder. Default is Picture folder.")
+            .optionWithValue("d", "directory", name: "\"/image/directory/path\"", description: "The full path to the image folder. Default is Picture folder.")
             .default("none"))
 let delay = arguments.add(
             .optionWithValue("s", "seconds", name: "seconds delay", description: "The delay in seconds between each image.")
@@ -336,13 +335,11 @@ Wallpaper manager for MacOS. Select directory with images, Wallhe will resize an
 Usage: wallhe
   -h,--help:
       Prints this message.
-  -D,--debug:
-      Enable debug messages.
-  -p,--path:
-      Show full path of image.
-  -n,--name:
-      Show name of image.
-  -d,--directory <image directory path>:
+  -v,--verbose:
+      Output messages.
+  -i,--info:
+      Display image information.
+  -d,--directory "/image/directory/path":
       The full path to the image folder. Default is Picture folder.
   -s,--seconds <seconds delay>:
       The delay in seconds between each image. Default = '60'.
@@ -380,7 +377,6 @@ filelist = filelist.filter{
        $0.lowercased().contains(".jp")
     || $0.lowercased().contains(".png")
     || $0.lowercased().contains(".bmp")
-    
 }
 
 guard filelist.count > 0 else {
