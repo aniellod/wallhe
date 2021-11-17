@@ -81,7 +81,9 @@ class thread2 {
                 self.currentFullPath = fullpath
                 self.count+=1
                 if debug { print("Image \(self.count) of \(filelist.count) - \(imageFile)") }
-                updateWallpaper(path: fullpath, name: imageFile)
+                autoreleasepool {
+                        updateWallpaper(path: fullpath, name: imageFile)
+                }
                 sleep(self.seconds)
             }
         self.count = 0 //we're out of the loop, reset the count
